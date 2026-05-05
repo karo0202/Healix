@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model User {
+  id              String          @id @default(cuid())
+  email           String          @unique
+  passwordHash    String?
+  fullName        String
+  phone           String?
+  locale          String          @default("en")
+  role            UserRole        @default(PATIENT)
+  avatarUrl       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  doctorProfile   Doctor?
+  patientBookings Appointment[]   @relation("PatientAppointments")
+  notifications   Notification[]
+  sentMessages    ChatMessage[]   @relation("SentMessages")
+  receivedMessages ChatMessage[]  @relation("ReceivedMessages")
+  reviews         Review[]
+  accounts        Account[]
+  sessions        Session[]
+}
+
+model Doctor {
+  id               String        @id @default(cuid())
+  userId           String        @unique
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty        String
+  location         String
+  experienceYears  Int
+  fees             Decimal       @db.Decimal(10, 2)
+  bio              String
+  rating           Float         @default(5)
+  isVerified       Boolean       @default(false)
+  consultationType String        @default("IN_PERSON")
+  availability     Json
+  appointments     Appointment[] @relation("DoctorAppointments")
+  reviews          Review[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Appointment {
+  id               String            @id @default(cuid())
+  patientId        String
+  doctorId         String
+  startsAt         DateTime
+  endsAt           DateTime
+  reason           String?
+  notes            String?
+  googleEventId    String?
+  videoCallUrl     String?
+  status           AppointmentStatus @default(PENDING)
+  paymentStatus    PaymentStatus     @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  patient          User              @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor           Doctor            @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  payment          Payment?
+  notifications    Notification[]
+
+  @@index([patientId, startsAt])
+  @@index([doctorId, startsAt])
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  patientId      String
+  doctorId       String
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now())
+  patient        User     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, doctorId])
+}
+
+model Notification {
+  id             String       @id @default(cuid())
+  userId         String
+  appointmentId  String?
+  title          String
+  message        String
+  channel        String
+  sentAt         DateTime?
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  appointmentId   String        @unique
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  provider        String        @default("STRIPE")
+  externalRef     String?
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  appointment     Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  senderId    String
+  receiverId  String
+  body        String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique
+  userId        String
+  expires       DateTime
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
