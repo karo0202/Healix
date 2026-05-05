@@ -44,16 +44,44 @@ Production-focused full-stack medical appointment booking platform built with Ne
 
 ## Deploy (Recommended)
 
-### Live preview from GitHub (Vercel)
+### Live preview on Vercel (recommended)
 
-GitHub does not run your Next.js server as a free “site” on its own. To get a **public preview URL** that shows up on GitHub (and **per-PR preview links**):
+1. **Database (hosted PostgreSQL)**  
+   Create a database (e.g. [Supabase](https://supabase.com) → **Project Settings → Database** → copy the **URI** connection string, or use [Railway](https://railway.app)).  
+   Use a connection string that allows access from the public internet (often **Transaction** pooler on Supabase for serverless).
 
-1. Push this project to a GitHub repository (see below).
-2. Sign in at [https://vercel.com](https://vercel.com) → **Add New…** → **Project** → **Import** your repo.
-3. **Framework Preset:** Next.js (default). **Root directory:** repository root (or the folder that contains `package.json`).
-4. In Vercel **Environment Variables**, copy everything you use locally from `.env.example` (at minimum `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`).
-5. Deploy. Vercel will assign a URL like `https://your-project.vercel.app`.
-6. Optional: on GitHub → repo **Settings** → **Environments** / rely on Vercel’s GitHub app — **pull requests** will get **Preview deployments**; links appear in the PR checks/comments.
+2. **Connect Vercel to GitHub**  
+   - Go to [https://vercel.com/new](https://vercel.com/new) and sign in with GitHub.  
+   - **Import** your repository (e.g. [karo0202/Healix](https://github.com/karo0202/Healix)).  
+   - **Root directory:** leave default (folder that contains `package.json`).  
+   - **Framework Preset:** Next.js.
+
+3. **Build settings (important)**  
+   Under **Build & Development Settings**, set **Build Command** to:
+   ```bash
+   npx prisma migrate deploy && npm run build
+   ```
+   Leave **Install Command** as default (`npm install`).  
+   `postinstall` already runs `prisma generate` so the Prisma client exists before `next build`.
+
+4. **Environment variables**  
+   In the project **Settings → Environment Variables**, add at least:
+
+   | Name | Value | Notes |
+   |------|--------|--------|
+   | `DATABASE_URL` | `postgresql://...` | From Supabase/Railway; must work from Vercel’s servers |
+   | `NEXTAUTH_SECRET` | long random string | e.g. `openssl rand -base64 32` |
+   | `NEXTAUTH_URL` | `https://YOUR-PROJECT.vercel.app` | Optional on Vercel if unset: the app derives it from `VERCEL_URL` (works for Preview URLs too). Set explicitly if you use a **custom domain**. No trailing slash. |
+
+   Add optional keys from `.env.example` (Stripe, Resend, etc.) when you use those features.  
+   Apply variables to **Production** (and **Preview** if you want PR previews to work with the same DB).
+
+5. **Deploy**  
+   Click **Deploy**. When it finishes, open the **Visit** URL — that is your live preview.  
+   Every **git push** redeploys; **pull requests** get a **Preview** URL if the Vercel GitHub integration is enabled (default).
+
+6. **GitHub**  
+   On the repo page you’ll see Vercel checks on commits/PRs with links to each deployment.
 
 **Push to GitHub (first time):**
 
@@ -61,18 +89,9 @@ GitHub does not run your Next.js server as a free “site” on its own. To get 
 cd medireserve
 git add .
 git commit -m "Add MediReserve app"
-# Create an empty repo on GitHub (no README), then:
 git remote add origin https://github.com/<YOUR_USER>/<YOUR_REPO>.git
 git push -u origin HEAD
 ```
-
-Set **`NEXTAUTH_URL`** in Vercel to your production URL (e.g. `https://your-project.vercel.app`).
-
-### Frontend (Vercel) — checklist
-
-1. Import the Git repository into Vercel.
-2. Add all environment variables from `.env.example`.
-3. Deploy with default Next.js settings.
 
 ### Database (Supabase or Railway)
 
