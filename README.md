@@ -69,7 +69,8 @@ Production-focused full-stack medical appointment booking platform built with Ne
 
    | Name | Value | Notes |
    |------|--------|--------|
-   | `DATABASE_URL` | `postgresql://...` | From Supabase/Railway; must work from Vercel’s servers |
+   | `DATABASE_URL` | `postgresql://...` | Use pooled/serverless URL for runtime (e.g. Supabase pooler `:6543`) |
+   | `DIRECT_URL` | `postgresql://...` | Use direct DB URL (usually `:5432`) for Prisma migrations |
    | `NEXTAUTH_SECRET` | long random string | e.g. `openssl rand -base64 32` |
    | `NEXTAUTH_URL` | `https://YOUR-PROJECT.vercel.app` | Optional on Vercel if unset: the app derives it from `VERCEL_URL` (works for Preview URLs too). Set explicitly if you use a **custom domain**. No trailing slash. |
 
