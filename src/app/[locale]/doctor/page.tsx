@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
+import { DoctorAppointmentActions } from "@/components/doctor-appointment-actions";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/session";
 
@@ -64,7 +65,7 @@ export default async function DoctorDashboard({
         <article className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-900">
           <h2 className="text-lg font-semibold">Today&apos;s bookings</h2>
           <p className="mt-2 text-3xl font-semibold">{todayCount}</p>
-          <p className="mt-2 text-sm text-slate-500">Accept or reject requests via the appointments API.</p>
+          <p className="mt-2 text-sm text-slate-500">Use the list below to accept or reject pending bookings.</p>
         </article>
         <article className="rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-900">
           <h2 className="text-lg font-semibold">Availability slots</h2>
@@ -73,15 +74,14 @@ export default async function DoctorDashboard({
       </section>
       <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm dark:bg-slate-900">
         <h3 className="mb-4 text-lg font-semibold">Upcoming patients</h3>
-        <div className="space-y-2">
-          {doctor.appointments.map((appointment) => (
-            <div key={appointment.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-              <span className="font-medium">{appointment.patient.fullName}</span>
-              <span className="text-slate-500">{appointment.startsAt.toLocaleString()}</span>
-              <span>{appointment.status}</span>
-            </div>
-          ))}
-        </div>
+        <DoctorAppointmentActions
+          items={doctor.appointments.map((a) => ({
+            id: a.id,
+            patientName: a.patient.fullName,
+            startsAt: a.startsAt.toISOString(),
+            status: a.status,
+          }))}
+        />
       </section>
     </AppShell>
   );

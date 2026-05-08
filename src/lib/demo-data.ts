@@ -62,17 +62,23 @@ export async function ensureDemoData() {
       ),
     );
 
-    await prisma.appointment.create({
-      data: {
-        patientId: patient.id,
-        doctorId: doctorUsers[0].id,
-        startsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-        endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 + 1000 * 60 * 30),
-        reason: "General checkup",
-        status: "CONFIRMED",
-        paymentStatus: "PAID",
-      },
+    const firstDoctorProfile = await prisma.doctor.findFirst({
+      where: { userId: { in: doctorUsers.map((u) => u.id) } },
+      orderBy: { createdAt: "asc" },
     });
+    if (firstDoctorProfile) {
+      await prisma.appointment.create({
+        data: {
+          patientId: patient.id,
+          doctorId: firstDoctorProfile.id,
+          startsAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+          endsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 + 1000 * 60 * 30),
+          reason: "General checkup",
+          status: "CONFIRMED",
+          paymentStatus: "PAID",
+        },
+      });
+    }
   }
 
   return { patientId: patient.id };

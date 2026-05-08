@@ -39,7 +39,9 @@ Production-focused full-stack medical appointment booking platform built with Ne
 3. Set up database and Prisma:
    - `npx prisma generate`
    - `npx prisma migrate dev --name init`
-4. Start app:
+4. Optional — seed demo doctors (verified) so patients can book immediately:
+   - `npm run db:seed`
+5. Start app:
    - `npm run dev`
 
 ## Deploy (Recommended)
